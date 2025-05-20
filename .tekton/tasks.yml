@@ -10,7 +10,7 @@ spec:
     - name: args
       description: Arguments to pass to nose
       type: string
-      default: "-v"
+      default: -v
   steps:
     - name: remove
       image: alpine:3
@@ -37,3 +37,33 @@ spec:
             # Elimina file e directory che iniziano con .. più qualsiasi altro carattere
             rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
           fi
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: nose
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: args
+      description: Arguments to pass to nose
+      type: string
+      default: -v
+  steps:
+    - name: nosetests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e  # Exit immediately if a command exits with a non-zero status.
+
+        echo "Installing pip and wheel..."
+        python -m pip install --upgrade pip wheel
+
+        echo "Installing dependencies from requirements.txt..."
+        pip install -r requirements.txt
+
+        echo "Running unit tests with nose..."
+        nosetests $(params.args)
